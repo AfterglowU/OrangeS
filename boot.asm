@@ -44,25 +44,25 @@ SectorNoOfRootDirectory equ     19      ; The sector number of the First sector 
 	BS_FileSysType  DB 'FAT12   '
 
 LABEL_START:                        mov ax, cs
-                                    mov	ds, ax
-                                    mov	es, ax
-                                    mov	ss, ax
-                                    mov	sp, BaseOfStack
+                                    mov ds, ax
+                                    mov es, ax
+                                    mov ss, ax
+                                    mov sp, BaseOfStack
 
                                     ; Reset Disk Drive A (AH=0, DL=0)
-                                    xor	ah, ah
-                                    xor	dl, dl
-                                    int	13h
+                                    xor ah, ah
+                                    xor dl, dl
+                                    int 13h
 
                                     mov word [wSectorNo], SectorNoOfRootDirectory
 LABEL_SEARCH_IN_ROOT_DIR_BEGIN:     cmp word [wRootDirSizeForLoop], 0
                                     jz  LABEL_NO_LOADERBIN
                                     dec word [wRootDirSizeForLoop]
-                                    mov	ax, BaseOfLoader
-                                    mov	es, ax                          ; es <- BaseOfLoader
-                                    mov	bx, OffsetOfLoader              ; bx <- OffsetOfLoader
-                                    mov	ax, [wSectorNo]                 ; ax <- the number of the sector we want to read in Root Directory
-                                    mov	cl, 1
+                                    mov ax, BaseOfLoader
+                                    mov es, ax                          ; es <- BaseOfLoader
+                                    mov bx, OffsetOfLoader              ; bx <- OffsetOfLoader
+                                    mov ax, [wSectorNo]                 ; ax <- the number of the sector we want to read in Root Directory
+                                    mov cl, 1
                                     call ReadSector
                                     
                                     
@@ -70,33 +70,33 @@ LABEL_SEARCH_IN_ROOT_DIR_BEGIN:     cmp word [wRootDirSizeForLoop], 0
                                     mov	si, LoaderFileName              ; ds:si -> "LOADER  BIN"
                                     cld
                                     mov	dx, 10h
-LABEL_SEARCH_FOR_LOADERBIN:         cmp dx, 0
-                                    jz	LABEL_GOTO_NEXT_SECTOR_IN_ROOT_DIR
-                                    dec	dx
+LABEL_SEARCH_FOR_LOADERBIN:         cmp	dx, 0
+                                    jz  LABEL_GOTO_NEXT_SECTOR_IN_ROOT_DIR
+                                    dec dx
                                     mov cx, 11
 LABEL_CMP_FILENAME:                 cmp cx, 0
-                                    jz	LABEL_FILENAME_FOUND            ; if all 11 chars are the same, then we find LOADER.BIN
-                                    dec	cx
+                                    jz  LABEL_FILENAME_FOUND            ; if all 11 chars are the same, then we find LOADER.BIN
+                                    dec cx
                                     lodsb                               ; load [ds:si] into al
-                                    cmp	al, byte [es:di]
-                                    jnz	LABEL_DIFFERENT                 ; 1 byte diff means it's not LOADER.BIN
-                                    inc	di
-                                    jmp	LABEL_CMP_FILENAME
-LABEL_DIFFERENT:                    and	di, 0FFE0h                  ; let di points to the beginning of cunrrent entry
+                                    cmp al, byte [es:di]
+                                    jnz LABEL_DIFFERENT                 ; 1 byte diff means it's not LOADER.BIN
+                                    inc di
+                                    jmp LABEL_CMP_FILENAME
+LABEL_DIFFERENT:                    and di, 0FFE0h                  ; let di points to the beginning of cunrrent entry
                                     add di, 20h                     ; di += 20h, points to the beginning of next entry
                                     mov si, LoaderFileName
                                     jmp LABEL_SEARCH_FOR_LOADERBIN
-LABEL_GOTO_NEXT_SECTOR_IN_ROOT_DIR: add	word [wSectorNo], 1
-                                    jmp	LABEL_SEARCH_IN_ROOT_DIR_BEGIN
+LABEL_GOTO_NEXT_SECTOR_IN_ROOT_DIR: add word [wSectorNo], 1
+                                    jmp LABEL_SEARCH_IN_ROOT_DIR_BEGIN
 
 
 LABEL_NO_LOADERBIN:                 mov dh, 2
                                     call DispStr    ; DispStr "No LOADER."
                                 %ifdef  _BOOT_DEBUG_
-                                    mov	ax, 4c00h
-                                    int	21h         ; Didn't find LOADER.BIN, return to DOS
+                                    mov ax, 4c00h
+                                    int 21h         ; Didn't find LOADER.BIN, return to DOS
                                 %else
-                                    jmp	$           ; Didn't find LOADER.BIN, dead loop here
+                                    jmp $           ; Didn't find LOADER.BIN, dead loop here
                                 %endif
 
 LABEL_FILENAME_FOUND:               jmp $           ; 代码暂时停在这里
@@ -124,17 +124,17 @@ Message2        db  "No LOADER" ; [2]
 ;   Func:
 ;       Display BootMessage[arg0] on screen
 DispStr:
-	mov	ax, MessageLength
-	mul	dh
-	add	ax, BootMessage
-	mov	bp, ax
-	mov	ax, ds
-	mov	es, ax
-	mov	cx, MessageLength
-	mov	ax, 01301h
-	mov	bx, 0007h
-	mov	dl, 0
-	int	10h
+	mov ax, MessageLength
+	mul dh
+	add ax, BootMessage
+	mov bp, ax
+	mov ax, ds
+	mov es, ax
+	mov cx, MessageLength
+	mov ax, 01301h
+	mov bx, 0007h
+	mov dl, 0
+	int 10h
 	ret
 
 
@@ -155,30 +155,30 @@ DispStr:
 ;   Func:
 ;       Start at NO.<arg0> sector, read continuous #arg1 sectors into [ES:BX]
 ReadSector:
-	push	bp
-	mov	bp, sp
-	sub	esp, 2
+	push    bp
+	mov bp, sp
+	sub esp, 2
 
-	mov	byte [bp-2], cl
+	mov byte [bp-2], cl
 	push bx
-	mov	bl, [BPB_SecPerTrk]
-	div	bl
-	inc	ah
-	mov	cl, ah
-	mov	dh, al
-	shr	al, 1
-	mov	ch, al
-	and	dh, 1
-	pop	bx
-	mov	dl, [BS_DrvNum]
+	mov bl, [BPB_SecPerTrk]
+	div bl
+	inc ah
+	mov cl, ah
+	mov dh, al
+	shr al, 1
+	mov ch, al
+	and dh, 1
+	pop bx
+	mov dl, [BS_DrvNum]
 .GoOnReading:
-	mov	ah, 2
-	mov	al, byte [bp-2]
-	int	13h
+	mov ah, 2
+	mov al, byte [bp-2]
+	int 13h
 	jc .GoOnReading     ; if error (CF is set to 1) then
                         ; keep trying until reading successfully
-	add	esp, 2
-	pop	bp
+	add esp, 2
+	pop bp
 	ret
 
 times 510-($-$$) db 0   ; fill the rest space with 0
